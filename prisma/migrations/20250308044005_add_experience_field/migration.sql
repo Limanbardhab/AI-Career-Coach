@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "experience" INTEGER,
+ALTER COLUMN "bio" SET DATA TYPE TEXT;
