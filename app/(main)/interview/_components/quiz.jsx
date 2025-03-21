@@ -16,6 +16,8 @@ import useFetch from "@/hooks/user_fetch";
 import { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import { toast } from "sonner";
+import QuizResult from "./quiz-result";
+import { Loader2 } from "lucide-react";
 
 const Quiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -31,11 +33,11 @@ const Quiz = () => {
   const {
     loading: savingResult,
     fn: saveQuizResultFn,
-    data: resultdata,
+    data: resultData,
     setData: setResultData,
   } = useFetch(saveQuizResult);
 
-  console.log(resultdata);
+  console.log(resultData);
 
   useEffect(() => {
     if (quizData) {
@@ -74,13 +76,31 @@ const Quiz = () => {
       await saveQuizResultFn(quizData, answers, score);
       toast.success("Quiz Completed !!");
     } catch (error) {
-      toast.error(error.message || "Failed to save quiz results");
+      toast.error(error.message );
     }
   };
+
+  const startNewQuiz = () => {
+    setCurrentQuestion(0);
+    setAnswers([]);
+    setShowExplanation(false);
+    generateQuizFn();
+    setResultData(null);
+  }
 
   if (generatingQuiz) {
     return <BarLoader className="mt-4" width={"100%"} color="gray" />;
   }
+
+  //Show the result if quiz is empty
+  if(resultData){
+    return(
+      <div className="mx-2">
+        <QuizResult result={resultData} onStartNew={startNewQuiz}/>
+      </div>
+    ); 
+  }
+
 
   if (!quizData) {
     return (
@@ -107,28 +127,28 @@ const Quiz = () => {
 
   return (
     <div>
-      <Card>
+      <Card className="mx-2">
         <CardHeader>
           <CardTitle>
             Question {currentQuestion + 1} of {quizData.length}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-lg font-medium mb-2"> {question.question}</p>
 
           <RadioGroup
             className="space-y-2"
-            onvalueChange={handleAnswer}
+            onValueChange={handleAnswer}
             value={answers[currentQuestion]}
           >
-            {question.options.map((option, index) => (
-             
+            {question.options.map((option, index) => {
+             return(
                 <div className="flex items-center space-x-2" key={index}>
                   <RadioGroupItem value={option} id={`option-${index}`} />
                   <Label htmlFor={`option-${index}`}>{option}</Label>
                 </div>
-              
-            ))}
+             );
+            })}
           </RadioGroup>
 
           {showExplanation && (
@@ -143,19 +163,19 @@ const Quiz = () => {
             <Button
               onClick={() => setShowExplanation(true)}
               variant="outline"
-              disable={!answers[currentQuestion]}
+              disabled={!answers[currentQuestion]}
             >
               Show Explanation
             </Button>
           )}
 
           <Button
-            onClick={() => handleNext}
+            onClick={handleNext}
             className="ml-auto"
-            disable={!answers[currentQuestion] || savingResult}
+            disabled={!answers[currentQuestion] || savingResult}
           >
             {savingResult && (
-              <BarLoader className="mt-4" width={"100%"} color="gray" />
+              <Loader2 className="mt-4" width={"100%"} color="gray" />
             )}
             {currentQuestion < quizData.length - 1
               ? "Next Question"

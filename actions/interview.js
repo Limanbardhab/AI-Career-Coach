@@ -38,7 +38,7 @@ export async function generateQuiz() {
           "question": "string",
           "options": ["string", "string", "string", "string"],
           "correctAnswer": "string",
-          "explanation": "string"
+          "explanation": "string",
         }
       ]
     }
@@ -75,16 +75,19 @@ export async function saveQuizResult(questions,answers,score){
     question:q.question,
     answer:q.correctAnswer,
     userAnswer: answers[index],
-    isCorect:q.correctAnswer === answers[index],
-    explaination:q.explanation,
+    isCorrect:q.correctAnswer === answers[index],
+    explanation:q.explanation,
 
   }));
 
 
   const WrongAnswers = questionResults.filter((q)=>!q.isCorrect);
+
+  let improvementTip = null ;
+
   if(WrongAnswers.length >0){
     const wrongQuestionsText = WrongAnswers.map((q)=>
-    `question: "${q.question}"\nCorrect Answer:"${q.answe}"\nUser Answer:"${q.userAnswer}"`)
+    `question: "${q.question}"\nCorrect Answer:"${q.answer}"\nUser Answer:"${q.userAnswer}"`)
     .join ("\n\n");
 
     const improvementPrompt = `
@@ -100,8 +103,8 @@ export async function saveQuizResult(questions,answers,score){
 
     try {
       const result = await model.generateContent(improvementPrompt);
-      const response = result.response;
-      improvementTip = response.text().trim();
+      
+      improvementTip = result.response.text().trim();
      
     } catch (error) {
       console.log("Error Generating Improvment tip",error);
@@ -114,14 +117,49 @@ export async function saveQuizResult(questions,answers,score){
         userId:user.id,
         quizScore:score,
         questions:questionResults,
-        catagory:"Technical",
+        category:"Technical",
         improvementTip,
-      }
-    })
+      },
+    });
 
     return assessment ;
   } catch (error) {
     console.error("Error saving quiz  result:" , error);
-    throw new Error("Failed to save Quiz result");
+    // throw new Error("Failed to save Quiz result");
   }
 }
+
+
+export async function getAssessments(){
+  const {userId} = await auth();
+
+  if(!userId) throw new Error("Unauthorized");
+
+  const user = await db.user.findUnique({
+    where:{
+      clerkUserId:userId ,
+    },
+  });
+
+  if(!user) throw new Error("User not found") ; 
+
+  try{
+    const assessments = await db.assessment.findMany({
+      where:{
+        
+          userId:user.id,
+        },
+        orderBy:{
+          createdAt:"asc"
+        }
+      
+    });
+
+    return assessments ;
+  }catch(error){
+    console.error("Error fetching assessments",error);
+    throw new Error("Failed to fetch assesments");
+  }
+}
+
+

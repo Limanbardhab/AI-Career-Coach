@@ -69,6 +69,5 @@ export async function getIndustryInsights(){
     });
     return industryInsight;
   }
-
   return user.industryInsight;
 }
